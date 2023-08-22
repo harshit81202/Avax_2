@@ -21,3 +21,6 @@ Click on Correct answer, automatically amount is being added in your account. Cl
 1) Solidity file
 2) React File
 3) Deploy file
+
+# For more details, you can access my loom video!
+loom link: 
