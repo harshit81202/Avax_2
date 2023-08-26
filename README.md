@@ -23,4 +23,4 @@ Click on Correct answer, automatically amount is being added in your account. Cl
 3) Deploy file
 
 # For more details, you can access my loom video!
-loom link: 
+loom link: https://www.loom.com/share/4c40869b7fe7418a97d007e2ce867339?sid=af96fd51-5c61-45d2-a7d3-d9d1617a2c33
