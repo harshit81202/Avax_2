@@ -1,5 +1,5 @@
-import {useState, useEffect} from "react";
-import {ethers} from "ethers";
+import React, { useState, useEffect } from "react";
+import { ethers } from "ethers";
 import atm_abi from "../artifacts/contracts/Assessment.sol/Assessment.json";
 
 export default function HomePage() {
@@ -8,110 +8,139 @@ export default function HomePage() {
   const [atm, setATM] = useState(undefined);
   const [balance, setBalance] = useState(undefined);
 
-  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+  const contractAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
   const atmABI = atm_abi.abi;
 
-  const getWallet = async() => {
+  const getWallet = async () => {
     if (window.ethereum) {
       setEthWallet(window.ethereum);
     }
 
     if (ethWallet) {
-      const account = await ethWallet.request({method: "eth_accounts"});
-      handleAccount(account);
+      const accounts = await ethWallet.request({ method: "eth_accounts" });
+      handleAccount(accounts[0]);
     }
-  }
+  };
 
   const handleAccount = (account) => {
     if (account) {
-      console.log ("Account connected: ", account);
+      console.log("Account connected: ", account);
       setAccount(account);
-    }
-    else {
+    } else {
       console.log("No account found");
     }
-  }
+  };
 
-  const connectAccount = async() => {
+  const connectAccount = async () => {
     if (!ethWallet) {
-      alert('Wallet is required for rewards');
+      alert("MetaMask wallet is required to connect");
       return;
     }
-  
-    const accounts = await ethWallet.request({ method: 'eth_requestAccounts' });
-    handleAccount(accounts);
-    
-    getATMContract();
+
+    try {
+      const accounts = await ethWallet.request({ method: "eth_requestAccounts" });
+      handleAccount(accounts[0]);
+
+      // Once wallet is set, get a reference to the deployed contract
+      getATMContract();
+    } catch (error) {
+      console.error("Error connecting account:", error);
+    }
   };
 
   const getATMContract = () => {
     const provider = new ethers.providers.Web3Provider(ethWallet);
     const signer = provider.getSigner();
     const atmContract = new ethers.Contract(contractAddress, atmABI, signer);
- 
+
     setATM(atmContract);
-  }
+  };
 
-  const getBalance = async() => {
+  const getBalance = async () => {
     if (atm) {
-      setBalance((await atm.getBalance()).toNumber());
+      console.log("Fetching balance...");
+      try {
+        const balanceWei = await atm.getBalance();
+        console.log("Balance Wei:", balanceWei.toString());
+        const balanceEther = ethers.utils.formatEther(balanceWei);
+        console.log("Balance Ether:", balanceEther);
+        setBalance(balanceEther);
+      } catch (error) {
+        console.error("Error fetching balance:", error);
+      }
     }
-  }
+  };
+  
+    
 
-  const deposit = async() => {
+  const deposit = async () => {
     if (atm) {
-      let tx = await atm.deposit(10);
-      await tx.wait()
+      const tx = await atm.deposit({ value: ethers.utils.parseEther("1") });
+      await tx.wait();
       getBalance();
     }
-  }
+  };
 
-  const withdraw = async() => {
+  const withdraw = async () => {
     if (atm) {
-      let tx = await atm.withdraw(5);
-      await tx.wait()
+      const tx = await atm.withdraw(ethers.utils.parseEther("1"));
+      await tx.wait();
       getBalance();
     }
-  }
+  };
+
+  const transfer = async () => {
+    if (atm) {
+      const recipientAddress = prompt("Enter recipient address:");
+      if (recipientAddress && ethers.utils.isAddress(recipientAddress)) {
+        const tx = await atm.transfer(recipientAddress, ethers.utils.parseEther("1"));
+        await tx.wait();
+        getBalance();
+      } else {
+        alert("Invalid recipient address");
+      }
+    }
+  };
 
   const initUser = () => {
     if (!ethWallet) {
-      return <p>For Processing this quiz game, please install wallet</p>
-    }
-    if (!account) {
-      return <button onClick={connectAccount}>Now, Connect wallet for rewards</button>
+      return <p>Please install MetaMask to use this ATM.</p>;
     }
 
-    if (balance == undefined) {
+    if (!account) {
+      return <button onClick={connectAccount}>Connect Your MetaMask Wallet</button>;
+    }
+
+    if (balance === undefined) {
       getBalance();
     }
 
     return (
       <div>
         <p>Your Account: {account}</p>
-        <p>Your Balance: {balance}</p>
-        <button onClick={deposit}>-7</button>
-        <button onClick={withdraw}>-2</button>
+        <p>Token Name: {balance}ETH</p>
+        <button onClick={deposit}>Deposit 1 ETH</button>
+        <button onClick={withdraw}>Withdraw 1 ETH</button>
+        <button onClick={transfer}>Transfer 1 ETH</button>
       </div>
-    )
-  }
+    );
+  };
 
-  useEffect(() => {getWallet();}, []);
+  useEffect(() => {
+    getWallet();
+  }, []);
 
   return (
     <main className="container">
-      <header><h1>❓⁉️🤔💭 QUIZ❓⁉️🤔💭</h1></header>
-      <header><h1>5-6*10/5=?</h1></header>
-      <header><h3>If your Answer is Correct; You will be rewarded as $10. If Your answer is wrong so you will loss $5.</h3></header>
-      <header><h4>Click on Correct Answer.</h4></header>
+      <header>
+        <h1>Welcome to the Harshit's ATM!</h1>
+      </header>
       {initUser()}
       <style jsx>{`
         .container {
-          text-align: left
-        }     
-      `}
-
-      </style>
+          text-align: left;
+        }
+      `}</style>
     </main>
-  )
+  );
 }
